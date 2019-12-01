@@ -13,6 +13,8 @@
 #include "../util/array.h"
 #include "function-type.h"
 
+#include "di-builder.h"
+
 typedef llvm::Value* (*BinaryOpFn)(llvm::IRBuilder<>& builder, llvm::Value*, llvm::Value*, const llvm::Twine&);
 template<BinaryOpFn method>
 NAN_METHOD(NANBinaryOperation) {
@@ -135,6 +137,7 @@ NAN_MODULE_INIT(IRBuilderWrapper::Init) {
     Nan::SetPrototypeMethod(functionTemplate, "createStore", IRBuilderWrapper::CreateStore);
     Nan::SetPrototypeMethod(functionTemplate, "createZExt", IRBuilderWrapper::ConvertOperation<&llvm::IRBuilder<>::CreateZExt>);
     Nan::SetPrototypeMethod(functionTemplate, "getInsertBlock", IRBuilderWrapper::GetInsertBlock);
+    Nan::SetPrototypeMethod(functionTemplate, "setCurrentDebugLocation", IRBuilderWrapper::SetCurrentDebugLocation);
     Nan::SetPrototypeMethod(functionTemplate, "setInsertionPoint", IRBuilderWrapper::SetInsertionPoint);
 
     auto constructorFunction = Nan::GetFunction(functionTemplate).ToLocalChecked();
@@ -644,6 +647,30 @@ NAN_METHOD(IRBuilderWrapper::GetInsertBlock) {
     }
 
     info.GetReturnValue().Set(Nan::Undefined());
+}
+
+NAN_METHOD(IRBuilderWrapper::SetCurrentDebugLocation) {
+	if (info.Length() != 3 || !info[0]->IsUint32() || !info[1]->IsUint32() ||
+		!(DIScopeWrapper::isInstance(info[2]) || DIFileWrapper::isInstance(info[2]) || DISubprogramWrapper::isInstance(info[2]) || DICompileUnitWrapper::isInstance(info[2])))
+	{
+        return Nan::ThrowTypeError("setCurrentDebugLocation needs to be called with: line: number, column: number, and scope: DIScope");
+    }
+
+	auto& builder = IRBuilderWrapper::FromValue(info.Holder())->getIRBuilder();
+	auto line = Nan::To<uint32_t>(info[0]).FromJust();
+	auto column = Nan::To<uint32_t>(info[1]).FromJust();
+
+	llvm::DIScope* scope;
+	if (DIScopeWrapper::isInstance(info[2]))
+		scope = DIScopeWrapper::FromValue(info[2])->getDIValue();
+	else if (DIFileWrapper::isInstance(info[2]))
+		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[2])->getDIValue();
+	else if (DISubprogramWrapper::isInstance(info[2]))
+		scope = (llvm::DIScope*) DISubprogramWrapper::FromValue(info[2])->getDIValue();
+	else
+		scope = (llvm::DIScope*) DICompileUnitWrapper::FromValue(info[2])->getDIValue();
+
+	builder.SetCurrentDebugLocation(llvm::DebugLoc::get(line, column, scope).get());
 }
 
 NAN_METHOD(IRBuilderWrapper::SetInsertionPoint) {

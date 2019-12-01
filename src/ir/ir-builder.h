@@ -59,6 +59,7 @@ private:
     static NAN_METHOD(CreateSelect);
     static NAN_METHOD(CreateStore);
     static NAN_METHOD(GetInsertBlock);
+	static NAN_METHOD(SetCurrentDebugLocation);
     static NAN_METHOD(SetInsertionPoint);
 
     static inline Nan::Persistent<v8::Function>& irBuilderConstructor() {

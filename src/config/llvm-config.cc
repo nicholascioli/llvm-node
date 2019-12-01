@@ -4,6 +4,7 @@
 
 #include <llvm/Config/llvm-config.h>
 #include "llvm-config.h"
+#include <llvm/IR/Module.h>
 
 NAN_MODULE_INIT(InitLLVMConfig) {
     auto config = Nan::New<v8::Object>();
@@ -13,6 +14,8 @@ NAN_MODULE_INIT(InitLLVMConfig) {
     Nan::Set(config, Nan::New("LLVM_VERSION_PATCH").ToLocalChecked(), Nan::New(static_cast<uint32_t>(LLVM_VERSION_PATCH)));
     Nan::Set(config, Nan::New("LLVM_VERSION_STRING").ToLocalChecked(), Nan::New(LLVM_VERSION_STRING).ToLocalChecked());
     Nan::Set(config, Nan::New("LLVM_DEFAULT_TARGET_TRIPLE").ToLocalChecked(), Nan::New(LLVM_DEFAULT_TARGET_TRIPLE).ToLocalChecked());
+
+    Nan::Set(config, Nan::New("DEBUG_METADATA_VERSION").ToLocalChecked(), Nan::New(llvm::DEBUG_METADATA_VERSION));
 
     Nan::Set(target, Nan::New("config").ToLocalChecked(), config);
 }

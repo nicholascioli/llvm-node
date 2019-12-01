@@ -9,6 +9,8 @@
 #include "argument.h"
 #include "basic-block.h"
 
+#include "di-builder.h"
+
 FunctionWrapper::FunctionWrapper(llvm::Function *function) : ConstantWrapper { function } {}
 
 NAN_MODULE_INIT(FunctionWrapper::Init) {
@@ -52,6 +54,7 @@ Nan::Persistent<v8::FunctionTemplate> &FunctionWrapper::functionTemplate() {
         Nan::SetPrototypeMethod(localTemplate, "getArguments", FunctionWrapper::getArguments);
         Nan::SetPrototypeMethod(localTemplate, "getEntryBlock", FunctionWrapper::getEntryBlock);
         Nan::SetPrototypeMethod(localTemplate, "getBasicBlocks", FunctionWrapper::getBasicBlocks);
+        Nan::SetPrototypeMethod(localTemplate, "setSubprogram", FunctionWrapper::setSubprogram);
         Nan::SetPrototypeMethod(localTemplate, "viewCFG", FunctionWrapper::viewCFG);
         Nan::SetAccessor(localTemplate->InstanceTemplate(), Nan::New("callingConv").ToLocalChecked(), FunctionWrapper::getCallingConv, FunctionWrapper::setCallingConv);
         Nan::SetAccessor(localTemplate->InstanceTemplate(), Nan::New("visibility").ToLocalChecked(), FunctionWrapper::getVisibility, FunctionWrapper::setVisibility);
@@ -227,6 +230,17 @@ NAN_SETTER(FunctionWrapper::setVisibility) {
     auto visibility = static_cast<llvm::GlobalValue::VisibilityTypes>(Nan::To<uint32_t>(value).FromJust());
 
     function->setVisibility(visibility);
+}
+
+NAN_METHOD(FunctionWrapper::setSubprogram) {
+	auto* function = FunctionWrapper::FromValue(info.Holder())->getFunction();
+
+	if (info.Length() != 1 || !DISubprogramWrapper::isInstance(info[0])) {
+		return Nan::ThrowTypeError("setSubprogram needs to be called with subprogram: DISubprogram");
+	}
+
+	auto* subp = DISubprogramWrapper::FromValue(info[0])->getDIValue();
+	function->setSubprogram(subp);
 }
 
 NAN_METHOD(FunctionWrapper::viewCFG) {

@@ -29,6 +29,7 @@ private:
     static NAN_METHOD(New);
 
     // instance
+    static NAN_METHOD(addModuleFlag);
     static NAN_METHOD(dump);
     static NAN_GETTER(empty);
     static NAN_METHOD(getFunction);

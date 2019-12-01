@@ -5,8 +5,11 @@
 #include "ir.h"
 #include "data-layout.h"
 #include "function-type.h"
+#include "dwarf.h"
+#include "di-builder.h"
 #include "ir-builder.h"
 #include "module.h"
+#include "mod-flag-behavior.h"
 #include "llvm-context.h"
 #include "type.h"
 #include "value.h"
@@ -53,12 +56,15 @@ NAN_MODULE_INIT(InitIR) {
     ConstantIntWrapper::Init(target);
     ConstantPointerNullWrapper::Init(target);
     DataLayoutWrapper::Init(target);
+	InitDwarf(target);
+	InitDebug(target);
     FunctionWrapper::Init(target);
     FunctionTypeWrapper::Init(target);
     GlobalVariableWrapper::Init(target);
     IRBuilderWrapper::Init(target);
     InitLinkageTypes(target);
     ModuleWrapper::Init(target);
+	InitModFlagBehaviorTypes(target);
     LLVMContextWrapper::Init(target);
     PhiNodeWrapper::Init(target);
     PointerTypeWrapper::Init(target);

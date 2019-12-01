@@ -1,724 +1,790 @@
 declare namespace llvm {
-  // bitcode/bitcodewriter
-  import AttrKind = llvm.Attribute.AttrKind;
-
-  function writeBitcodeToFile(module: Module, filename: string): void;
-
-  // IR/verifier
-  function verifyModule(mod: Module): void;
-
-  function verifyFunction(fun: Function): void;
-
-  // support
-  function initializeAllTargetInfos(): void;
-
-  function initializeAllTargets(): void;
-
-  function initializeAllTargetMCs(): void;
-
-  function initializeAllAsmParsers(): void;
-
-  function initializeAllAsmPrinters(): void;
-
-  namespace Attribute {
-    enum AttrKind {
-      Alignment,
-      AllocSize,
-      AlwaysInline,
-      ArgMemOnly,
-      Builtin,
-      ByVal,
-      Cold,
-      Convergent,
-      Dereferenceable,
-      DereferenceableOrNull,
-      InAlloca,
-      InReg,
-      InaccessibleMemOnly,
-      InaccessibleMemOrArgMemOnly,
-      InlineHint,
-      JumpTable,
-      MinSize,
-      Naked,
-      Nest,
-      NoAlias,
-      NoBuiltin,
-      NoCapture,
-      NoDuplicate,
-      NoImplicitFloat,
-      NoInline,
-      NoRecurse,
-      NoRedZone,
-      NoReturn,
-      NoUnwind,
-      NonLazyBind,
-      NonNull,
-      OptimizeForSize,
-      OptimizeNone,
-      ReadNone,
-      ReadOnly,
-      Returned,
-      ReturnsTwice,
-      SExt,
-      SafeStack,
-      SanitizeAddress,
-      SanitizeMemory,
-      SanitizeThread,
-      StackAlignment,
-      StackProtect,
-      StackProtectReq,
-      StackProtectStrong,
-      StructRet,
-      SwiftError,
-      SwiftSelf,
-      UWTable,
-      WriteOnly,
-      ZExt
-    }
-  }
-
-  //ir
-  enum LinkageTypes {
-    ExternalLinkage,
-    AvailableExternallyLinkage,
-    LinkOnceAnyLinkage,
-    LinkOnceODRLinkage,
-    WeakAnyLinkage,
-    WeakODRLinkage,
-    AppendingLinkage,
-    InternalLinkage,
-    PrivateLinkage,
-    ExternalWeakLinkage,
-    CommonLinkage
-  }
-
-  enum VisibilityTypes {
-    Hidden,
-    Default,
-    Protected
-  }
-
-  class Value {
-    static MaxAlignmentExponent: number;
-    static MaximumAlignment: number;
+	// bitcode/bitcodewriter
+	import AttrKind = llvm.Attribute.AttrKind;
+
+	function writeBitcodeToFile(module: Module, filename: string): void;
+
+	// IR/verifier
+	function verifyModule(mod: Module): void;
+
+	function verifyFunction(fun: Function): void;
+
+	// support
+	function initializeAllTargetInfos(): void;
+
+	function initializeAllTargets(): void;
+
+	function initializeAllTargetMCs(): void;
+
+	function initializeAllAsmParsers(): void;
+
+	function initializeAllAsmPrinters(): void;
+
+	namespace Attribute {
+		enum AttrKind {
+			Alignment,
+			AllocSize,
+			AlwaysInline,
+			ArgMemOnly,
+			Builtin,
+			ByVal,
+			Cold,
+			Convergent,
+			Dereferenceable,
+			DereferenceableOrNull,
+			InAlloca,
+			InReg,
+			InaccessibleMemOnly,
+			InaccessibleMemOrArgMemOnly,
+			InlineHint,
+			JumpTable,
+			MinSize,
+			Naked,
+			Nest,
+			NoAlias,
+			NoBuiltin,
+			NoCapture,
+			NoDuplicate,
+			NoImplicitFloat,
+			NoInline,
+			NoRecurse,
+			NoRedZone,
+			NoReturn,
+			NoUnwind,
+			NonLazyBind,
+			NonNull,
+			OptimizeForSize,
+			OptimizeNone,
+			ReadNone,
+			ReadOnly,
+			Returned,
+			ReturnsTwice,
+			SExt,
+			SafeStack,
+			SanitizeAddress,
+			SanitizeMemory,
+			SanitizeThread,
+			StackAlignment,
+			StackProtect,
+			StackProtectReq,
+			StackProtectStrong,
+			StructRet,
+			SwiftError,
+			SwiftSelf,
+			UWTable,
+			WriteOnly,
+			ZExt
+		}
+	}
+
+	//module
+	enum ModFlagBehavior {
+		Error,
+		Warning,
+		Require,
+		Override,
+		Append,
+		AppendUnique,
+		Max
+	}
+
+	//ir
+	enum LinkageTypes {
+		ExternalLinkage,
+		AvailableExternallyLinkage,
+		LinkOnceAnyLinkage,
+		LinkOnceODRLinkage,
+		WeakAnyLinkage,
+		WeakODRLinkage,
+		AppendingLinkage,
+		InternalLinkage,
+		PrivateLinkage,
+		ExternalWeakLinkage,
+		CommonLinkage
+	}
 
-    protected constructor();
+	enum VisibilityTypes {
+		Hidden,
+		Default,
+		Protected
+	}
 
-    readonly type: Type;
-    name: string;
+	class Value {
+		static MaxAlignmentExponent: number;
+		static MaximumAlignment: number;
 
-    dump?: () => void;
+		protected constructor();
 
-    hasName(): boolean;
+		readonly type: Type;
+		name: string;
 
-    /**
-     * Deletes the value. It is, therefore, forbidden to use the value any further
-     */
-    release(): void;
+		dump?: () => void;
 
-    deleteValue(): void;
+		hasName(): boolean;
 
-    replaceAllUsesWith(value: Value): void;
+		/**
+		 * Deletes the value. It is, therefore, forbidden to use the value any further
+		 */
+		release(): void;
 
-    useEmpty(): boolean;
-  }
+		deleteValue(): void;
 
-  class Argument extends Value {
-    readonly argumentNumber: number;
-    readonly parent?: Function;
+		replaceAllUsesWith(value: Value): void;
 
-    constructor(type: Type, name?: string, fn?: Function, argNo?: number);
+		useEmpty(): boolean;
+	}
 
-    addAttr(kind: Attribute.AttrKind): void;
+	class Argument extends Value {
+		readonly argumentNumber: number;
+		readonly parent?: Function;
 
-    hasAttribute(kind: Attribute.AttrKind): boolean;
+		constructor(type: Type, name?: string, fn?: Function, argNo?: number);
 
-    addDereferenceableAttr(bytes: number): void;
-  }
+		addAttr(kind: Attribute.AttrKind): void;
 
-  class AllocaInst extends Value {
-    alignment: number;
-    type: PointerType;
-    allocatedType: Type;
-    readonly arraySize: Value | null;
+		hasAttribute(kind: Attribute.AttrKind): boolean;
 
-    private constructor();
-  }
+		addDereferenceableAttr(bytes: number): void;
+	}
 
-  class BasicBlock extends Value {
-    static create(context: LLVMContext, name?: string, parent?: Function, insertBefore?: BasicBlock): BasicBlock;
+	class AllocaInst extends Value {
+		alignment: number;
+		type: PointerType;
+		allocatedType: Type;
+		readonly arraySize: Value | null;
 
-    private constructor();
+		private constructor();
+	}
 
-    readonly parent?: Function;
-    readonly empty: boolean;
-    readonly context: LLVMContext;
+	class BasicBlock extends Value {
+		static create(context: LLVMContext, name?: string, parent?: Function, insertBefore?: BasicBlock): BasicBlock;
 
-    eraseFromParent(): void;
+		private constructor();
 
-    getTerminator(): Value | undefined;
-  }
+		readonly parent?: Function;
+		readonly empty: boolean;
+		readonly context: LLVMContext;
 
-  class Constant extends Value {
-    static getNullValue(type: Type): Constant;
+		eraseFromParent(): void;
 
-    static getAllOnesValue(type: Type): Constant;
+		getTerminator(): Value | undefined;
+	}
 
-    protected constructor();
+	class Constant extends Value {
+		static getNullValue(type: Type): Constant;
 
-    isNullValue(): boolean;
+		static getAllOnesValue(type: Type): Constant;
 
-    isOneValue(): boolean;
+		protected constructor();
 
-    isAllOnesValue(): boolean;
-  }
+		isNullValue(): boolean;
 
-  class ConstantFP extends Constant {
-    static get(context: LLVMContext, value: number): ConstantFP;
-    static get(type: Type, value: string): Constant;
+		isOneValue(): boolean;
 
-    static getZeroValueForNegation(type: Type): Constant;
+		isAllOnesValue(): boolean;
+	}
 
-    static getNegativeZero(type: Type): Constant;
+	class ConstantFP extends Constant {
+		static get(context: LLVMContext, value: number): ConstantFP;
+		static get(type: Type, value: string): Constant;
 
-    static getNaN(type: Type): Constant;
+		static getZeroValueForNegation(type: Type): Constant;
 
-    static getInfinity(type: Type, negative?: boolean /* = false */): Constant;
+		static getNegativeZero(type: Type): Constant;
 
-    private constructor();
+		static getNaN(type: Type): Constant;
 
-    readonly value: number;
-  }
+		static getInfinity(type: Type, negative?: boolean /* = false */): Constant;
 
-  class ConstantInt extends Constant {
-    static get(context: LLVMContext, value: number | string, numBits?: number, signed?: boolean): ConstantInt;
+		private constructor();
 
-    static getFalse(context: LLVMContext): ConstantInt;
+		readonly value: number;
+	}
 
-    static getTrue(context: LLVMContext): ConstantInt;
+	class ConstantInt extends Constant {
+		static get(context: LLVMContext, value: number | string, numBits?: number, signed?: boolean): ConstantInt;
 
-    private constructor();
+		static getFalse(context: LLVMContext): ConstantInt;
 
-    readonly value: number;
+		static getTrue(context: LLVMContext): ConstantInt;
 
-    public toString(): string;
-  }
+		private constructor();
 
-  class ConstantPointerNull extends Constant {
-    static get(pointerType: PointerType): ConstantPointerNull;
+		readonly value: number;
 
-    private constructor();
-  }
+		public toString(): string;
+	}
 
-  class ConstantArray extends Constant {
-    static get(arrayType: ArrayType, elements: Constant[]): Constant;
-  }
+	class ConstantPointerNull extends Constant {
+		static get(pointerType: PointerType): ConstantPointerNull;
 
-  class ConstantDataArray extends Constant {
-    static get(llvmContext: LLVMContext, values: Uint32Array | Float32Array | Float64Array): Constant;
+		private constructor();
+	}
 
-    static getString(llvmContext: LLVMContext, value: string): Constant;
+	class ConstantArray extends Constant {
+		static get(arrayType: ArrayType, elements: Constant[]): Constant;
+	}
 
-    private constructor();
-  }
+	class ConstantDataArray extends Constant {
+		static get(llvmContext: LLVMContext, values: Uint32Array | Float32Array | Float64Array): Constant;
 
-  class ConstantStruct extends Constant {
-    static get(structType: StructType, values: Constant[]): Constant;
+		static getString(llvmContext: LLVMContext, value: string): Constant;
 
-    private constructor();
-  }
+		private constructor();
+	}
 
-  class Function extends Constant {
-    static create(functionType: FunctionType, linkageTypes: LinkageTypes, name?: string, module?: Module): Function;
+	class ConstantStruct extends Constant {
+		static get(structType: StructType, values: Constant[]): Constant;
 
-    callingConv: CallingConv;
-    visibility: VisibilityTypes;
-    type: PointerType & { elementType: FunctionType };
+		private constructor();
+	}
 
-    private constructor();
+	class Function extends Constant {
+		static create(functionType: FunctionType, linkageTypes: LinkageTypes, name?: string, module?: Module): Function;
 
-    addAttribute(index: number, attribute: Attribute.AttrKind): void;
+		callingConv: CallingConv;
+		visibility: VisibilityTypes;
+		type: PointerType & { elementType: FunctionType };
 
-    addBasicBlock(basicBlock: BasicBlock): void;
+		private constructor();
 
-    addDereferenceableAttr(attributeIndex: number, bytes: number): void;
+		addAttribute(index: number, attribute: Attribute.AttrKind): void;
 
-    addDereferenceableOrNullAttr(attributeIndex: number, bytes: number): void;
+		addBasicBlock(basicBlock: BasicBlock): void;
 
-    addFnAttr(attribute: Attribute.AttrKind): void;
+		addDereferenceableAttr(attributeIndex: number, bytes: number): void;
 
-    getArguments(): Argument[];
+		addDereferenceableOrNullAttr(attributeIndex: number, bytes: number): void;
 
-    getEntryBlock(): BasicBlock | null;
+		addFnAttr(attribute: Attribute.AttrKind): void;
 
-    getBasicBlocks(): BasicBlock[];
+		getArguments(): Argument[];
 
-    viewCFG(): void;
-  }
+		getEntryBlock(): BasicBlock | null;
 
-  class GlobalVariable extends Constant {
-    constant: boolean;
-    initializer: Constant | undefined;
+		getBasicBlocks(): BasicBlock[];
 
-    setUnnamedAddr(unnamedAddr: UnnamedAddr): void;
+		setSubprogram(subp: DISubprogram): void;
 
-    hasGlobalUnnamedAddr(): boolean;
+		viewCFG(): void;
+	}
 
-    constructor(
-      module: Module,
-      type: Type,
-      constant: boolean,
-      linkageType: LinkageTypes,
-      initializer?: Constant,
-      name?: string
-    );
-  }
+	class GlobalVariable extends Constant {
+		constant: boolean;
+		initializer: Constant | undefined;
 
-  enum UnnamedAddr {
-    None,
-    Local,
-    Global
-  }
+		setUnnamedAddr(unnamedAddr: UnnamedAddr): void;
 
-  class PhiNode extends Value {
-    private constructor();
+		hasGlobalUnnamedAddr(): boolean;
 
-    readonly elementType: Type;
+		constructor(
+			module: Module,
+			type: Type,
+			constant: boolean,
+			linkageType: LinkageTypes,
+			initializer?: Constant,
+			name?: string
+		);
+	}
 
-    addIncoming(value: Value, basicBlock: BasicBlock): void;
-  }
+	enum UnnamedAddr {
+		None,
+		Local,
+		Global
+	}
 
-  class CallInst extends Value {
-    callingConv: CallingConv;
+	class PhiNode extends Value {
+		private constructor();
 
-    private constructor();
+		readonly elementType: Type;
 
-    addDereferenceableAttr(index: number, size: number): void;
+		addIncoming(value: Value, basicBlock: BasicBlock): void;
+	}
 
-    hasRetAttr(kind: AttrKind): boolean;
+	class CallInst extends Value {
+		callingConv: CallingConv;
 
-    paramHasAttr(index: number, kind: AttrKind): boolean;
+		private constructor();
 
-    getNumArgOperands(): number;
-  }
+		addDereferenceableAttr(index: number, size: number): void;
 
-  enum CallingConv {
-    C,
-    Fast,
-    Cold,
-    GHC,
-    HiPE,
-    WebKit_JS,
-    AnyReg,
-    PreserveMost,
-    PreserveAll,
-    CXX_FAST_TLS,
-    FirstTargetCC,
-    X86_StdCall,
-    X86_FastCall,
-    ARM_APCS,
-    ARM_AAPCS,
-    ARM_AAPCS_VFP,
-    MSP430_INTR,
-    X86_ThisCall,
-    PTX_Kernel,
-    PTX_Device,
-    SPIR_FUNC,
-    SPIR_KERNEL,
-    Intel_OCL_BI,
-    X86_64_SysV,
-    /**
-     * @deprecated use Win64 instead
-     */
-    X86_64_Win64,
-    Win64,
-    X86_VectorCall,
-    HHVM,
-    HHVM_C,
-    X86_INTR,
-    AVR_INTR,
-    AVR_SIGNAL,
-    AVR_BUILTIN,
-    AMDGPU_VS,
-    AMDGPU_GS,
-    AMDGPU_PS,
-    AMDGPU_CS,
-    AMDGPU_KERNEL,
-    X86_RegCall,
-    AMDGPU_HS,
-    MSP430_BUILTIN,
-    MaxID
-  }
+		hasRetAttr(kind: AttrKind): boolean;
 
-  class UndefValue {
-    private constructor();
+		paramHasAttr(index: number, kind: AttrKind): boolean;
 
-    static get(type: Type): UndefValue;
-  }
+		getNumArgOperands(): number;
+	}
 
-  class DataLayout {
-    constructor(layout: string);
+	enum CallingConv {
+		C,
+		Fast,
+		Cold,
+		GHC,
+		HiPE,
+		WebKit_JS,
+		AnyReg,
+		PreserveMost,
+		PreserveAll,
+		CXX_FAST_TLS,
+		FirstTargetCC,
+		X86_StdCall,
+		X86_FastCall,
+		ARM_APCS,
+		ARM_AAPCS,
+		ARM_AAPCS_VFP,
+		MSP430_INTR,
+		X86_ThisCall,
+		PTX_Kernel,
+		PTX_Device,
+		SPIR_FUNC,
+		SPIR_KERNEL,
+		Intel_OCL_BI,
+		X86_64_SysV,
+		/**
+		 * @deprecated use Win64 instead
+		 */
+		X86_64_Win64,
+		Win64,
+		X86_VectorCall,
+		HHVM,
+		HHVM_C,
+		X86_INTR,
+		AVR_INTR,
+		AVR_SIGNAL,
+		AVR_BUILTIN,
+		AMDGPU_VS,
+		AMDGPU_GS,
+		AMDGPU_PS,
+		AMDGPU_CS,
+		AMDGPU_KERNEL,
+		X86_RegCall,
+		AMDGPU_HS,
+		MSP430_BUILTIN,
+		MaxID
+	}
 
-    getStringRepresentation(): string;
+	class UndefValue {
+		private constructor();
 
-    getPointerSize(as: number): number;
+		static get(type: Type): UndefValue;
+	}
 
-    getPrefTypeAlignment(type: Type): number;
+	class DataLayout {
+		constructor(layout: string);
 
-    getTypeStoreSize(type: Type): number;
+		getStringRepresentation(): string;
 
-    getIntPtrType(context: LLVMContext, as: number): Type;
-  }
+		getPointerSize(as: number): number;
 
-  class Type {
-    static TypeID: {
-      VoidTyID: number;
-      HalfTyID: number;
-      FloatTyID: number;
-      DoubleTyID: number;
-      X86_FP80TyID: number;
-      PPC_FP128TyID: number;
-      LabelTyID: number;
-      MetadataTyID: number;
-      X86_MMXTyID: number;
-      TokenTyID: number;
-      IntegerTyID: number;
-      FunctionTyID: number;
-      StructTyID: number;
-      ArrayTyID: number;
-      PointerTyID: number;
-      VectorTyID: number;
-    };
+		getPrefTypeAlignment(type: Type): number;
 
-    static getFloatTy(context: LLVMContext): Type;
+		getTypeStoreSize(type: Type): number;
 
-    static getDoubleTy(context: LLVMContext): Type;
+		getIntPtrType(context: LLVMContext, as: number): Type;
+	}
 
-    static getFP128Ty(context: LLVMContext): Type;
+	class Type {
+		static TypeID: {
+			VoidTyID: number;
+			HalfTyID: number;
+			FloatTyID: number;
+			DoubleTyID: number;
+			X86_FP80TyID: number;
+			PPC_FP128TyID: number;
+			LabelTyID: number;
+			MetadataTyID: number;
+			X86_MMXTyID: number;
+			TokenTyID: number;
+			IntegerTyID: number;
+			FunctionTyID: number;
+			StructTyID: number;
+			ArrayTyID: number;
+			PointerTyID: number;
+			VectorTyID: number;
+		};
 
-    static getVoidTy(context: LLVMContext): Type;
+		static getFloatTy(context: LLVMContext): Type;
 
-    static getLabelTy(context: LLVMContext): Type;
+		static getDoubleTy(context: LLVMContext): Type;
 
-    static getInt1Ty(context: LLVMContext): IntegerType;
+		static getFP128Ty(context: LLVMContext): Type;
 
-    static getInt8Ty(context: LLVMContext): IntegerType;
+		static getVoidTy(context: LLVMContext): Type;
 
-    static getInt16Ty(context: LLVMContext): IntegerType;
+		static getLabelTy(context: LLVMContext): Type;
 
-    static getInt32Ty(context: LLVMContext): IntegerType;
+		static getInt1Ty(context: LLVMContext): IntegerType;
 
-    static getInt64Ty(context: LLVMContext): IntegerType;
+		static getInt8Ty(context: LLVMContext): IntegerType;
 
-    static getInt128Ty(context: LLVMContext): IntegerType;
+		static getInt16Ty(context: LLVMContext): IntegerType;
 
-    static getIntNTy(context: LLVMContext, N: number): IntegerType;
+		static getInt32Ty(context: LLVMContext): IntegerType;
 
-    static getInt1PtrTy(context: LLVMContext, AS?: number): PointerType;
+		static getInt64Ty(context: LLVMContext): IntegerType;
 
-    static getInt8PtrTy(context: LLVMContext, AS?: number): PointerType;
+		static getInt128Ty(context: LLVMContext): IntegerType;
 
-    static getInt32PtrTy(context: LLVMContext, AS?: number): PointerType;
+		static getIntNTy(context: LLVMContext, N: number): IntegerType;
 
-    static getDoublePtrTy(context: LLVMContext, AS?: number): PointerType;
+		static getInt1PtrTy(context: LLVMContext, AS?: number): PointerType;
 
-    static getFloatPtrTy(context: LLVMContext, AS?: number): PointerType;
+		static getInt8PtrTy(context: LLVMContext, AS?: number): PointerType;
 
-    static getHalfTy(context: LLVMContext): Type;
+		static getInt32PtrTy(context: LLVMContext, AS?: number): PointerType;
 
-    protected constructor();
+		static getDoublePtrTy(context: LLVMContext, AS?: number): PointerType;
 
-    readonly typeID: number;
+		static getFloatPtrTy(context: LLVMContext, AS?: number): PointerType;
 
-    equals(other: Type): boolean;
+		static getHalfTy(context: LLVMContext): Type;
 
-    isVoidTy(): boolean;
+		protected constructor();
 
-    isFloatTy(): boolean;
+		readonly typeID: number;
 
-    isDoubleTy(): boolean;
+		equals(other: Type): boolean;
 
-    isFP128Ty(): boolean;
+		isVoidTy(): boolean;
 
-    isLabelTy(): boolean;
+		isFloatTy(): boolean;
 
-    isIntegerTy(bitWidth?: number): boolean;
+		isDoubleTy(): boolean;
 
-    isFunctionTy(): this is FunctionType;
+		isFP128Ty(): boolean;
 
-    isStructTy(): this is StructType;
+		isLabelTy(): boolean;
 
-    isArrayTy(): boolean;
+		isIntegerTy(bitWidth?: number): boolean;
 
-    isHalfTy(): boolean;
+		isFunctionTy(): this is FunctionType;
 
-    isPointerTy(): this is PointerType;
+		isStructTy(): this is StructType;
 
-    getPointerTo(addressSpace?: number): PointerType;
+		isArrayTy(): boolean;
 
-    getPrimitiveSizeInBits(): number;
+		isHalfTy(): boolean;
 
-    toString(): string;
-  }
+		isPointerTy(): this is PointerType;
 
-  class IntegerType extends Type {
-    private constructor();
+		getPointerTo(addressSpace?: number): PointerType;
 
-    getBitWidth(): number;
-  }
+		getPrimitiveSizeInBits(): number;
 
-  class FunctionType extends Type {
-    static get(result: Type, isVarArg: boolean): FunctionType;
-    static get(result: Type, params: Type[], isVarArg: boolean): FunctionType;
+		toString(): string;
+	}
 
-    static isValidReturnType(type: Type): boolean;
+	class IntegerType extends Type {
+		private constructor();
 
-    static isValidArgumentType(type: Type): boolean;
+		getBitWidth(): number;
+	}
 
-    readonly returnType: Type;
-    readonly isVarArg: boolean;
-    readonly numParams: number;
+	class FunctionType extends Type {
+		static get(result: Type, isVarArg: boolean): FunctionType;
+		static get(result: Type, params: Type[], isVarArg: boolean): FunctionType;
 
-    private constructor();
+		static isValidReturnType(type: Type): boolean;
 
-    getParams(): Type[];
+		static isValidArgumentType(type: Type): boolean;
 
-    getParamType(index: number): Type;
-  }
+		readonly returnType: Type;
+		readonly isVarArg: boolean;
+		readonly numParams: number;
 
-  class PointerType extends Type {
-    static get(elementType: Type, AS: number): PointerType;
+		private constructor();
 
-    elementType: Type;
+		getParams(): Type[];
 
-    private constructor();
-  }
+		getParamType(index: number): Type;
+	}
 
-  class ArrayType extends Type {
-    static get(elementType: Type, numElements: number): ArrayType;
+	class PointerType extends Type {
+		static get(elementType: Type, AS: number): PointerType;
 
-    readonly elementType: Type;
-    readonly numElements: number;
+		elementType: Type;
 
-    private constructor();
-  }
+		private constructor();
+	}
 
-  class StructType extends Type {
-    static create(context: LLVMContext, name?: string): StructType;
+	class ArrayType extends Type {
+		static get(elementType: Type, numElements: number): ArrayType;
 
-    static get(context: LLVMContext, elements: Type[], isPacked?: boolean): StructType;
+		readonly elementType: Type;
+		readonly numElements: number;
 
-    name: string | undefined;
-    readonly numElements: number;
+		private constructor();
+	}
 
-    private constructor();
+	class StructType extends Type {
+		static create(context: LLVMContext, name?: string): StructType;
 
-    getElementType(index: number): Type;
+		static get(context: LLVMContext, elements: Type[], isPacked?: boolean): StructType;
 
-    setBody(elements: Type[], packed?: boolean): void;
-  }
+		name: string | undefined;
+		readonly numElements: number;
 
-  class IRBuilder {
-    constructor(context: LLVMContext);
-    constructor(basicBlock: BasicBlock, beforeInstruction?: Value);
+		private constructor();
 
-    setInsertionPoint(basicBlock: BasicBlock): void;
+		getElementType(index: number): Type;
 
-    createAdd(lhs: Value, rhs: Value, name?: string): Value;
+		setBody(elements: Type[], packed?: boolean): void;
+	}
 
-    createAlloca(type: Type, arraySize?: Value, name?: string): AllocaInst;
+	namespace Dwarf {
+		enum ATE {
+			Boolean,
+			Float,
+			Signed
+		}
+		enum Lang {
+			C
+		}
+	}
 
-    createAlignedLoad(ptr: Value, align: number, name?: string): Value;
+	class DIBasicType {
+	}
 
-    createAlignedStore(value: Value, ptr: Value, align: number, isVolatile?: boolean): Value;
+	class DICompileUnit {
+	}
 
-    createAnd(lhs: Value, rhs: Value, name?: string): Value;
+	class DIFile extends DIScope {
+	}
 
-    createAShr(lhs: Value, rhs: Value, name?: string): Value;
+	class DILocalVariable {
+	}
 
-    createBitCast(value: Value, destType: Type, name?: string): Value;
+	class DIScope {
+	}
 
-    createBr(basicBlock: BasicBlock): Value;
+	class DISubprogram extends DIScope {
+	}
 
-    createCall(callee: Value, args: Value[], name?: string): CallInst;
+	class DISubroutineType {
+	}
 
-    createCondBr(condition: Value, then: BasicBlock, elseBlock: BasicBlock): Value;
+	class DIType {
+	}
 
-    createExtractValue(agg: Value, idxs: number[], name?: string): Value;
+	class DIBuilder {
+		constructor(target: Module, allowUnresolved?: boolean, compileUnit?: DICompileUnit);
 
-    createFAdd(lhs: Value, rhs: Value, name?: string): Value;
+		createAutoVariable(scope: DIScope, name: string, file: DIFile, line: number, type: DIType): DILocalVariable;
+		createBasicType(name: string, sizeInBits: number, encoding: number): DIBasicType;
+		createCompileUnit(language: Dwarf.Lang, file: DIFile, producer: string, isOptimized: boolean, flags: string, RV: number): DICompileUnit;
+		createFile(filename: string, directory: string): DIFile;
+		createFunction(scope: DIScope | DIFile, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
+		createPointerType(pointee: DIType, sizeInBits: number, name: string): DIType;
+		createSubroutineType(paramTypes: Array<DIBasicType>): DISubroutineType;
+		finalize(): void;
+		insertDeclare(value: Value, local: DILocalVariable, block: BasicBlock, line: Number, columnL: Number): Value;
+	}
 
-    createFCmpOGE(lhs: Value, rhs: Value, name?: string): Value;
+	class IRBuilder {
+		constructor(context: LLVMContext);
+		constructor(basicBlock: BasicBlock, beforeInstruction?: Value);
 
-    createFCmpOGT(lhs: Value, rhs: Value, name?: string): Value;
+		setCurrentDebugLocation(line: number, column: number, scope: DIScope): void;
+		setInsertionPoint(basicBlock: BasicBlock): void;
 
-    createFCmpOLE(lhs: Value, rhs: Value, name?: string): Value;
+		createAdd(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFCmpOLT(lhs: Value, rhs: Value, name?: string): Value;
+		createAlloca(type: Type, arraySize?: Value, name?: string): AllocaInst;
 
-    createFCmpOEQ(lhs: Value, rhs: Value, name?: string): Value;
+		createAlignedLoad(ptr: Value, align: number, name?: string): Value;
 
-    createFCmpONE(lhs: Value, rhs: Value, name?: string): Value;
+		createAlignedStore(value: Value, ptr: Value, align: number, isVolatile?: boolean): Value;
 
-    createFCmpUGE(lhs: Value, rhs: Value, name?: string): Value;
+		createAnd(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFCmpUGT(lhs: Value, rhs: Value, name?: string): Value;
+		createAShr(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFCmpULE(lhs: Value, rhs: Value, name?: string): Value;
+		createBitCast(value: Value, destType: Type, name?: string): Value;
 
-    createFCmpULT(lhs: Value, rhs: Value, name?: string): Value;
+		createBr(basicBlock: BasicBlock): Value;
 
-    createFCmpUEQ(lhs: Value, rhs: Value, name?: string): Value;
+		createCall(callee: Value, args: Value[], name?: string): CallInst;
 
-    createFCmpUNE(lhs: Value, rhs: Value, name?: string): Value;
+		createCondBr(condition: Value, then: BasicBlock, elseBlock: BasicBlock): Value;
 
-    createFDiv(lhs: Value, rhs: Value, name?: string): Value;
+		createExtractValue(agg: Value, idxs: number[], name?: string): Value;
 
-    createFNeg(value: Value, name?: string): Value;
+		createFAdd(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFMul(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpOGE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFRem(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpOGT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFSub(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpOLE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createFPToSI(value: Value, type: Type, name?: string): Value;
+		createFCmpOLT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createGlobalString(str: string, name?: string, addressSpace?: number): Value;
+		createFCmpOEQ(lhs: Value, rhs: Value, name?: string): Value;
 
-    createGlobalStringPtr(str: string, name?: string, addressSpace?: number): Value;
+		createFCmpONE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createInBoundsGEP(ptr: Value, idxList: Value[], name?: string): Value;
-    createInBoundsGEP(type: Type, ptr: Value, idxList: Value[], name?: string): Value;
+		createFCmpUGE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createInsertValue(agg: Value, val: Value, idxList: number[], name?: string): Value;
+		createFCmpUGT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createIntCast(vlaue: Value, type: Type, isSigned: boolean, name?: string): Value;
+		createFCmpULE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpEQ(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpULT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpNE(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpUEQ(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpSGE(lhs: Value, rhs: Value, name?: string): Value;
+		createFCmpUNE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpSGT(lhs: Value, rhs: Value, name?: string): Value;
+		createFDiv(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpSLE(lhs: Value, rhs: Value, name?: string): Value;
+		createFNeg(value: Value, name?: string): Value;
 
-    createICmpSLT(lhs: Value, rhs: Value, name?: string): Value;
+		createFMul(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpUGE(lhs: Value, rhs: Value, name?: string): Value;
+		createFRem(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpUGT(lhs: Value, rhs: Value, name?: string): Value;
+		createFSub(lhs: Value, rhs: Value, name?: string): Value;
 
-    createICmpULE(lhs: Value, rhs: Value, name?: string): Value;
+		createFPToSI(value: Value, type: Type, name?: string): Value;
 
-    createICmpULT(lhs: Value, rhs: Value, name?: string): Value;
+		createGlobalString(str: string, name?: string, addressSpace?: number): Value;
 
-    createLoad(ptr: Value, name?: string): Value;
+		createGlobalStringPtr(str: string, name?: string, addressSpace?: number): Value;
 
-    createLShr(lhs: Value, rhs: Value, name?: string): Value;
+		createInBoundsGEP(ptr: Value, idxList: Value[], name?: string): Value;
+		createInBoundsGEP(type: Type, ptr: Value, idxList: Value[], name?: string): Value;
 
-    createMul(lhs: Value, rhs: Value, name?: string): Value;
+		createInsertValue(agg: Value, val: Value, idxList: number[], name?: string): Value;
 
-    createNeg(value: Value, name?: string, hasNUW?: boolean, hasNSW?: boolean): Value;
+		createIntCast(vlaue: Value, type: Type, isSigned: boolean, name?: string): Value;
 
-    createNot(value: Value, name?: string): Value;
+		createICmpEQ(lhs: Value, rhs: Value, name?: string): Value;
 
-    createOr(lhs: Value, rhs: Value, name?: string): Value;
+		createICmpNE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createXor(lhs: Value, rhs: Value, name?: string): Value;
+		createICmpSGE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createPhi(type: Type, numReservedValues: number, name?: string): PhiNode;
+		createICmpSGT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createPtrToInt(value: Value, destType: Type, name?: string): Value;
+		createICmpSLE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createRet(value: Value): Value;
+		createICmpSLT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createRetVoid(): Value;
+		createICmpUGE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createSelect(condition: Value, trueValue: Value, falseValue: Value, name?: string): Value;
+		createICmpUGT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createSDiv(lhs: Value, rhs: Value, name?: string): Value;
+		createICmpULE(lhs: Value, rhs: Value, name?: string): Value;
 
-    createShl(lhs: Value, rhs: Value, name?: string): Value;
+		createICmpULT(lhs: Value, rhs: Value, name?: string): Value;
 
-    createSIToFP(value: Value, type: Type, name?: string): Value;
+		createLoad(ptr: Value, name?: string): Value;
 
-    createUIToFP(value: Value, type: Type, name?: string): Value;
+		createLShr(lhs: Value, rhs: Value, name?: string): Value;
 
-    createSub(lhs: Value, rhs: Value, name?: string): Value;
+		createMul(lhs: Value, rhs: Value, name?: string): Value;
 
-    createStore(value: Value, ptr: Value, isVolatile?: boolean): Value;
+		createNeg(value: Value, name?: string, hasNUW?: boolean, hasNSW?: boolean): Value;
 
-    createSRem(lhs: Value, rhs: Value, name?: string): Value;
+		createNot(value: Value, name?: string): Value;
 
-    CreateURem(lhs: Value, rhs: Value, name?: string): Value;
+		createOr(lhs: Value, rhs: Value, name?: string): Value;
 
-    createZExt(value: Value, destType: Type, name?: string): Value;
+		createXor(lhs: Value, rhs: Value, name?: string): Value;
 
-    getInsertBlock(): BasicBlock | undefined;
-  }
+		createPhi(type: Type, numReservedValues: number, name?: string): PhiNode;
 
-  class LLVMContext {
-    constructor();
+		createPtrToInt(value: Value, destType: Type, name?: string): Value;
 
-    // any property that makes ts emits an error if any other object is passed to a method that is not an llvm context
-    private __marker: number;
-  }
+		createRet(value: Value): Value;
 
-  interface FunctionCallee {
-    callee: Value;
-    functionType: FunctionType;
-  }
+		createRetVoid(): Value;
 
-  class Module {
-    empty: boolean;
-    readonly name: string;
-    moduleIdentifier: string;
-    sourceFileName: string;
-    dataLayout: DataLayout;
-    targetTriple: string;
+		createSelect(condition: Value, trueValue: Value, falseValue: Value, name?: string): Value;
 
-    constructor(moduleId: string, context: LLVMContext);
+		createSDiv(lhs: Value, rhs: Value, name?: string): Value;
 
-    dump?: () => void;
+		createShl(lhs: Value, rhs: Value, name?: string): Value;
 
-    print(): string;
+		createSIToFP(value: Value, type: Type, name?: string): Value;
 
-    getFunction(name: string): Function | undefined;
+		createUIToFP(value: Value, type: Type, name?: string): Value;
 
-    getOrInsertFunction(name: string, functionType: FunctionType): FunctionCallee;
+		createSub(lhs: Value, rhs: Value, name?: string): Value;
 
-    getGlobalVariable(name: string, allowInternal?: boolean): GlobalVariable;
+		createStore(value: Value, ptr: Value, isVolatile?: boolean): Value;
 
-    getTypeByName(name: string): StructType | null;
-  }
+		createSRem(lhs: Value, rhs: Value, name?: string): Value;
 
-  // support
-  class TargetRegistry {
-    private constructor();
+		CreateURem(lhs: Value, rhs: Value, name?: string): Value;
 
-    static lookupTarget(target: string): Target;
-  }
+		createZExt(value: Value, destType: Type, name?: string): Value;
 
-  interface Target {
-    readonly name: string;
-    readonly shortDescription: string;
-    createTargetMachine(triple: string, cpu: string): TargetMachine;
-  }
+		getInsertBlock(): BasicBlock | undefined;
+	}
 
-  interface TargetMachine {
-    createDataLayout(): DataLayout;
-  }
+	class LLVMContext {
+		constructor();
 
-  export const config: Readonly<{
-    LLVM_VERSION_MAJOR: number;
-    LLVM_VERSION_MINOR: number;
-    LLVM_VERSION_PATCH: number;
-    LLVM_VERSION_STRING: string;
-    LLVM_DEFAULT_TARGET_TRIPLE: string;
-  }>;
+		// any property that makes ts emits an error if any other object is passed to a method that is not an llvm context
+		private __marker: number;
+	}
+
+	interface FunctionCallee {
+		callee: Value;
+		functionType: FunctionType;
+	}
+
+	class Module {
+		empty: boolean;
+		readonly name: string;
+		moduleIdentifier: string;
+		sourceFileName: string;
+		dataLayout: DataLayout;
+		targetTriple: string;
+
+		constructor(moduleId: string, context: LLVMContext);
+
+		addModuleFlag(behavior: ModFlagBehavior, key: string, value: number | Constant): void;
+		dump?: () => void;
+
+		print(): string;
+
+		getFunction(name: string): Function | undefined;
+
+		getOrInsertFunction(name: string, functionType: FunctionType): FunctionCallee;
+
+		getGlobalVariable(name: string, allowInternal?: boolean): GlobalVariable;
+
+		getTypeByName(name: string): StructType | null;
+	}
+
+	// support
+	class TargetRegistry {
+		private constructor();
+
+		static lookupTarget(target: string): Target;
+	}
+
+	interface Target {
+		readonly name: string;
+		readonly shortDescription: string;
+		createTargetMachine(triple: string, cpu: string): TargetMachine;
+	}
+
+	interface TargetMachine {
+		createDataLayout(): DataLayout;
+	}
+
+	export const config: Readonly<{
+		LLVM_VERSION_MAJOR: number;
+		LLVM_VERSION_MINOR: number;
+		LLVM_VERSION_PATCH: number;
+		LLVM_VERSION_STRING: string;
+		LLVM_DEFAULT_TARGET_TRIPLE: string;
+
+		DEBUG_METADATA_VERSION: number;
+	}>;
 }
 
 export = llvm;

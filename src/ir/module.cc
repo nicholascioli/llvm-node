@@ -7,6 +7,7 @@
 #include "../util/string.h"
 #include "./llvm-context.h"
 #include "./data-layout.h"
+#include "constant.h"
 #include "function.h"
 #include "function-type.h"
 #include "global-variable.h"
@@ -22,6 +23,7 @@ NAN_MODULE_INIT(ModuleWrapper::Init) {
 #endif
 
     Nan::SetAccessor(functionTemplate->InstanceTemplate(), Nan::New("empty").ToLocalChecked(), empty);
+    Nan::SetPrototypeMethod(functionTemplate, "addModuleFlag", addModuleFlag);
     Nan::SetPrototypeMethod(functionTemplate, "getFunction", getFunction);
     Nan::SetPrototypeMethod(functionTemplate, "getOrInsertFunction", getOrInsertFunction);
     Nan::SetPrototypeMethod(functionTemplate, "getGlobalVariable", getGlobalVariable);
@@ -66,6 +68,28 @@ NAN_METHOD(ModuleWrapper::dump) {
 NAN_GETTER(ModuleWrapper::empty) {
     bool empty = ModuleWrapper::FromValue(info.Holder())->module->empty();
     info.GetReturnValue().Set(Nan::New(empty));
+}
+
+NAN_METHOD(ModuleWrapper::addModuleFlag) {
+	if (info.Length() != 3 || !info[0]->IsUint32() || !info[1]->IsString() ||
+		!(ConstantWrapper::isInstance(info[2]) || info[2]->IsUint32()))
+	{
+		return Nan::ThrowTypeError("addModuleFlag needs to be called with: behavior: ModFlagBehavior, key: string, and value: Constant");
+	}
+
+	auto* module = ModuleWrapper::FromValue(info.Holder())->getModule();
+	auto behavior = (llvm::Module::ModFlagBehavior)Nan::To<uint32_t>(info[0]).FromJust();
+	auto key = ToString(info[1]);
+
+	if (ConstantWrapper::isInstance(info[2])) {
+		auto* val = ConstantWrapper::FromValue(info[2])->getConstant();
+		module->addModuleFlag(behavior, key, val);
+	} else {
+		auto val = Nan::To<uint32_t>(info[2]).FromJust();
+		module->addModuleFlag(behavior, key, val);
+	}
+
+	info.GetReturnValue().Set(Nan::Undefined());
 }
 
 NAN_METHOD(ModuleWrapper::getFunction) {
