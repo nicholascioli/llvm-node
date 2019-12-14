@@ -7,6 +7,7 @@
 template<> std::string DIBasicTypeWrapper::name = "DIBasicType";
 template<> std::string DICompileUnitWrapper::name = "DICompileUnit";
 template<> std::string DIFileWrapper::name = "DIFile";
+template<> std::string DILexicalBlockWrapper::name = "DILexicalBlock";
 template<> std::string DILocalVariableWrapper::name = "DILocalVariable";
 template<> std::string DIScopeWrapper::name = "DIScope";
 template<> std::string DISubprogramWrapper::name = "DISubprogram";
@@ -18,6 +19,7 @@ NAN_MODULE_INIT(InitDebug) {
 	DICompileUnitWrapper::Init(target);
 	DIBuilderWrapper::Init(target);
 	DIFileWrapper::Init(target);
+	DILexicalBlockWrapper::Init(target);
 	DILocalVariableWrapper::Init(target);
 	DIScopeWrapper::Init(target);
 	DISubprogramWrapper::Init(target);
@@ -35,10 +37,12 @@ NAN_MODULE_INIT(DIBuilderWrapper::Init) {
 	Nan::SetPrototypeMethod(functionTemplate, "createCompileUnit", DIBuilderWrapper::CreateCompileUnit);
 	Nan::SetPrototypeMethod(functionTemplate, "createFile", DIBuilderWrapper::CreateFile);
 	Nan::SetPrototypeMethod(functionTemplate, "createFunction", DIBuilderWrapper::CreateFunction);
+	Nan::SetPrototypeMethod(functionTemplate, "createLexicalBlock", DIBuilderWrapper::CreateLexicalBlock);
 	Nan::SetPrototypeMethod(functionTemplate, "createPointerType", DIBuilderWrapper::CreatePointerType);
 	Nan::SetPrototypeMethod(functionTemplate, "createSubroutineType", DIBuilderWrapper::CreateSubroutineType);
 	Nan::SetPrototypeMethod(functionTemplate, "finalize", DIBuilderWrapper::Finalize);
 	Nan::SetPrototypeMethod(functionTemplate, "insertDeclare", DIBuilderWrapper::InsertDeclare);
+	Nan::SetPrototypeMethod(functionTemplate, "insertDbgValueIntrinsic", DIBuilderWrapper::InsertDbgValueIntrinsic);
 
 	auto constructorFunction = Nan::GetFunction(functionTemplate).ToLocalChecked();
 	diBuilderConstructor().Reset(constructorFunction);
@@ -81,7 +85,7 @@ NAN_METHOD(DIBuilderWrapper::CreateAutoVariable) {
 	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
 
 	if (info.Length() != 5 || !(
-		(DIScopeWrapper::isInstance(info[0]) || DIFileWrapper::isInstance(info[0]) || DISubprogramWrapper::isInstance(info[0])) &&
+		IS_SCOPE(info[0]) &&
 		info[1]->IsString() &&
 		DIFileWrapper::isInstance(info[2]) &&
 		info[3]->IsUint32() &&
@@ -90,7 +94,18 @@ NAN_METHOD(DIBuilderWrapper::CreateAutoVariable) {
 		return Nan::ThrowTypeError("createAutoVariable needs to be called with scope: DIScope, name: string, file: DIFile, lineNo: number, ty: DIType");
 	}
 
-	auto* scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
+	llvm::DIScope* scope;
+	if (DILexicalBlockWrapper::isInstance(info[0]))
+		scope = DILexicalBlockWrapper::FromValue(info[0])->getDIValue();
+	else if (DIScopeWrapper::isInstance(info[0]))
+		scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
+	else if (DIFileWrapper::isInstance(info[0]))
+		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[0])->getDIValue();
+	else if (DISubprogramWrapper::isInstance(info[0]))
+		scope = (llvm::DIScope*) DISubprogramWrapper::FromValue(info[0])->getDIValue();
+	else
+		scope = (llvm::DIScope*) DICompileUnitWrapper::FromValue(info[0])->getDIValue();
+
 	auto  name  = ToString(info[1]);
 	auto* file  = DIFileWrapper::FromValue(info[2])->getDIValue();
 	auto  line  = Nan::To<uint32_t>(info[3]).FromJust();
@@ -183,7 +198,7 @@ NAN_METHOD(DIBuilderWrapper::CreateFunction) {
 	// FIXME: Add support for checksum and source
 	if (info.Length() < 1 ||
 			(info.Length() == 7 && !(
-				(DIScopeWrapper::isInstance(info[0]) || DIFileWrapper::isInstance(info[0]) || DISubprogramWrapper::isInstance(info[0]) || DICompileUnitWrapper::isInstance(info[0])) &&
+				IS_SCOPE(info[0]) &&
 				info[1]->IsString() &&
 				info[2]->IsString() &&
 				DIFileWrapper::isInstance(info[3]) &&
@@ -196,7 +211,9 @@ NAN_METHOD(DIBuilderWrapper::CreateFunction) {
 	}
 
 	llvm::DIScope* scope;
-	if (DIScopeWrapper::isInstance(info[0]))
+	if (DILexicalBlockWrapper::isInstance(info[0]))
+		scope = DILexicalBlockWrapper::FromValue(info[0])->getDIValue();
+	else if (DIScopeWrapper::isInstance(info[0]))
 		scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
 	else if (DIFileWrapper::isInstance(info[0]))
 		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[0])->getDIValue();
@@ -217,6 +234,40 @@ NAN_METHOD(DIBuilderWrapper::CreateFunction) {
 
 	// TODO: Implement line below
 	info.GetReturnValue().Set(DISubprogramWrapper::of(diSub));
+}
+
+NAN_METHOD(DIBuilderWrapper::CreateLexicalBlock) {
+	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
+
+	// FIXME: Add support for checksum and source
+	if (info.Length() < 1 ||
+			(info.Length() == 4 && !(
+				IS_SCOPE(info[0]) &&
+				DIFileWrapper::isInstance(info[1]) &&
+				info[2]->IsUint32() &&
+				info[3]->IsUint32()
+			)) ||
+			info.Length() > 4) {
+		return Nan::ThrowTypeError("CreateLexicalBlock needs to be called with scope: Scope, file: DIFile, line: number, and column: number");
+	}
+
+	llvm::DIScope* scope;
+	if (DILexicalBlockWrapper::isInstance(info[0]))
+		scope = DILexicalBlockWrapper::FromValue(info[0])->getDIValue();
+	else if (DIScopeWrapper::isInstance(info[0]))
+		scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
+	else if (DIFileWrapper::isInstance(info[0]))
+		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[0])->getDIValue();
+	else if (DISubprogramWrapper::isInstance(info[0]))
+		scope = (llvm::DIScope*) DISubprogramWrapper::FromValue(info[0])->getDIValue();
+	else
+		scope = (llvm::DIScope*) DICompileUnitWrapper::FromValue(info[0])->getDIValue();
+
+	auto* file = DIFileWrapper::FromValue(info[1])->getDIValue();
+	auto line = Nan::To<uint32_t>(info[2]).FromJust();
+	auto col = Nan::To<uint32_t>(info[3]).FromJust();
+
+	info.GetReturnValue().Set(DILexicalBlockWrapper::of(builder.createLexicalBlock(scope, file, line, col)));
 }
 
 NAN_METHOD(DIBuilderWrapper::CreatePointerType) {
@@ -293,4 +344,28 @@ NAN_METHOD(DIBuilderWrapper::InsertDeclare) {
 	auto* loc = llvm::DebugLoc::get(line, column, var->getScope()).get();
 	auto* expr = builder.createExpression();
 	builder.insertDeclare(val, var, expr, loc, blo);
+}
+
+NAN_METHOD(DIBuilderWrapper::InsertDbgValueIntrinsic) {
+	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
+
+	if (info.Length() != 5 || !(
+		ValueWrapper::isInstance(info[0]) &&
+		DILocalVariableWrapper::isInstance(info[1]) &&
+		BasicBlockWrapper::isInstance(info[2]) &&
+		info[3]->IsUint32() &&
+		info[4]->IsUint32()
+	)) {
+		return Nan::ThrowTypeError("insertDbgValueIntrinsic needs to be called with value: Value, local: DILocalVariable, and block: BasicBlock");
+	}
+
+	auto* val = ValueWrapper::FromValue(info[0])->getValue();
+	auto* var = DILocalVariableWrapper::FromValue(info[1])->getDIValue();
+	auto* blo = BasicBlockWrapper::FromValue(info[2])->getBasicBlock();
+	auto line = Nan::To<uint32_t>(info[3]).FromJust();
+	auto column = Nan::To<uint32_t>(info[4]).FromJust();
+
+	auto* loc = llvm::DebugLoc::get(line, column, var->getScope()).get();
+	auto* expr = builder.createExpression();
+	builder.insertDbgValueIntrinsic(val, var, expr, loc, blo);
 }

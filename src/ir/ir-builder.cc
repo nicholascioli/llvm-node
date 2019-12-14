@@ -651,7 +651,7 @@ NAN_METHOD(IRBuilderWrapper::GetInsertBlock) {
 
 NAN_METHOD(IRBuilderWrapper::SetCurrentDebugLocation) {
 	if (info.Length() != 3 || !info[0]->IsUint32() || !info[1]->IsUint32() ||
-		!(DIScopeWrapper::isInstance(info[2]) || DIFileWrapper::isInstance(info[2]) || DISubprogramWrapper::isInstance(info[2]) || DICompileUnitWrapper::isInstance(info[2])))
+		!IS_SCOPE(info[2]))
 	{
         return Nan::ThrowTypeError("setCurrentDebugLocation needs to be called with: line: number, column: number, and scope: DIScope");
     }
@@ -661,7 +661,9 @@ NAN_METHOD(IRBuilderWrapper::SetCurrentDebugLocation) {
 	auto column = Nan::To<uint32_t>(info[1]).FromJust();
 
 	llvm::DIScope* scope;
-	if (DIScopeWrapper::isInstance(info[2]))
+	if (DILexicalBlockWrapper::isInstance(info[2]))
+		scope = DILexicalBlockWrapper::FromValue(info[2])->getDIValue();
+	else if (DIScopeWrapper::isInstance(info[2]))
 		scope = DIScopeWrapper::FromValue(info[2])->getDIValue();
 	else if (DIFileWrapper::isInstance(info[2]))
 		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[2])->getDIValue();

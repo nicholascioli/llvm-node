@@ -551,6 +551,9 @@ declare namespace llvm {
 	class DIFile extends DIScope {
 	}
 
+	class DILexicalBlock {
+	}
+
 	class DILocalVariable {
 	}
 
@@ -566,18 +569,21 @@ declare namespace llvm {
 	class DIType {
 	}
 
+	type Scope = DIFile | DIScope | DILexicalBlock;
 	class DIBuilder {
 		constructor(target: Module, allowUnresolved?: boolean, compileUnit?: DICompileUnit);
 
-		createAutoVariable(scope: DIScope, name: string, file: DIFile, line: number, type: DIType): DILocalVariable;
+		createAutoVariable(scope: Scope, name: string, file: DIFile, line: number, type: DIType): DILocalVariable;
 		createBasicType(name: string, sizeInBits: number, encoding: number): DIBasicType;
 		createCompileUnit(language: Dwarf.Lang, file: DIFile, producer: string, isOptimized: boolean, flags: string, RV: number): DICompileUnit;
 		createFile(filename: string, directory: string): DIFile;
-		createFunction(scope: DIScope | DIFile, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
+		createFunction(scope: Scope, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
+		createLexicalBlock(scope: DIScope | DIFile, file: DIFile, line: number, col: number): DIScope;
 		createPointerType(pointee: DIType, sizeInBits: number, name: string): DIType;
 		createSubroutineType(paramTypes: Array<DIBasicType>): DISubroutineType;
 		finalize(): void;
 		insertDeclare(value: Value, local: DILocalVariable, block: BasicBlock, line: Number, columnL: Number): Value;
+		insertDbgValueIntrinsic(value: Value, local: DILocalVariable, block: BasicBlock, line: Number, columnL: Number): Value;
 	}
 
 	class IRBuilder {
