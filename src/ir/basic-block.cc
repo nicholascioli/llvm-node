@@ -107,6 +107,28 @@ NAN_METHOD(BasicBlockWrapper::getTerminator) {
     info.GetReturnValue().Set(Nan::Undefined());
 }
 
+NAN_METHOD(BasicBlockWrapper::removeFromParent) {
+	auto* basicBlock = BasicBlockWrapper::FromValue(info.Holder())->getBasicBlock();
+
+	basicBlock->removeFromParent();
+}
+
+NAN_METHOD(BasicBlockWrapper::insertInto) {
+	auto* basicBlock = BasicBlockWrapper::FromValue(info.Holder())->getBasicBlock();
+
+	if (info.Length() < 1 || (
+		info.Length() > 0 && !FunctionWrapper::isInstance(info[0])) ||
+		info.Length() > 1 && !BasicBlockWrapper::isInstance(info[1]
+	)) {
+		return Nan::ThrowTypeError("insertInto needs to be called with: parent: Function, insertBefore?: BasicBlock");
+	}
+
+	auto* func = FunctionWrapper::FromValue(info[0])->getFunction();
+	auto* before = info.Length() < 2 ? nullptr : BasicBlockWrapper::FromValue(info[1])->getBasicBlock();
+
+	basicBlock->insertInto(func, before);
+}
+
 Nan::Persistent<v8::FunctionTemplate>& BasicBlockWrapper::basicBlockTemplate() {
     static Nan::Persistent<v8::FunctionTemplate> functionTemplate {};
 
@@ -122,6 +144,8 @@ Nan::Persistent<v8::FunctionTemplate>& BasicBlockWrapper::basicBlockTemplate() {
         Nan::SetAccessor(localTemplate->InstanceTemplate(), Nan::New("parent").ToLocalChecked(), BasicBlockWrapper::getParent);
         Nan::SetAccessor(localTemplate->InstanceTemplate(), Nan::New("context").ToLocalChecked(), BasicBlockWrapper::getContext);
         Nan::SetPrototypeMethod(localTemplate, "getTerminator", BasicBlockWrapper::getTerminator);
+        Nan::SetPrototypeMethod(localTemplate, "removeFromParent", BasicBlockWrapper::removeFromParent);
+        Nan::SetPrototypeMethod(localTemplate, "insertInto", BasicBlockWrapper::insertInto);
 
         functionTemplate.Reset(localTemplate);
     }

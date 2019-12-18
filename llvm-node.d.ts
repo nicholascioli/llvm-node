@@ -166,6 +166,8 @@ declare namespace llvm {
 		readonly context: LLVMContext;
 
 		eraseFromParent(): void;
+		removeFromParent(): void;
+		insertInto(parent: Function, insertBefore?: BasicBlock): void;
 
 		getTerminator(): Value | undefined;
 	}
@@ -257,6 +259,8 @@ declare namespace llvm {
 		addDereferenceableOrNullAttr(attributeIndex: number, bytes: number): void;
 
 		addFnAttr(attribute: Attribute.AttrKind): void;
+
+		deleteBody(): void;
 
 		getArguments(): Argument[];
 
@@ -535,7 +539,8 @@ declare namespace llvm {
 		enum ATE {
 			Boolean,
 			Float,
-			Signed
+			Signed,
+			Unsigned
 		}
 		enum Lang {
 			C
@@ -546,6 +551,12 @@ declare namespace llvm {
 	}
 
 	class DICompileUnit {
+	}
+
+	class DICompositeType {
+	}
+
+	class DIDerivedType {
 	}
 
 	class DIFile extends DIScope {
@@ -569,18 +580,20 @@ declare namespace llvm {
 	class DIType {
 	}
 
-	type Scope = DIFile | DIScope | DILexicalBlock;
+	type _Scope = DIFile | DIScope | DILexicalBlock;
+	type _Type = DIBasicType | DICompositeType | DIDerivedType | DIType;
 	class DIBuilder {
 		constructor(target: Module, allowUnresolved?: boolean, compileUnit?: DICompileUnit);
 
-		createAutoVariable(scope: Scope, name: string, file: DIFile, line: number, type: DIType): DILocalVariable;
+		createAutoVariable(scope: _Scope, name: string, file: DIFile, line: number, type: _Type): DILocalVariable;
 		createBasicType(name: string, sizeInBits: number, encoding: number): DIBasicType;
 		createCompileUnit(language: Dwarf.Lang, file: DIFile, producer: string, isOptimized: boolean, flags: string, RV: number): DICompileUnit;
 		createFile(filename: string, directory: string): DIFile;
-		createFunction(scope: Scope, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
-		createLexicalBlock(scope: DIScope | DIFile, file: DIFile, line: number, col: number): DIScope;
-		createPointerType(pointee: DIType, sizeInBits: number, name: string): DIType;
-		createSubroutineType(paramTypes: Array<DIBasicType>): DISubroutineType;
+		createFunction(scope: _Scope, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
+		createLexicalBlock(scope: _Scope, file: DIFile, line: number, col: number): DILexicalBlock;
+		createPointerType(pointee: _Type, sizeInBits: number, name: string): DIDerivedType;
+		createStructType(scope: _Scope, name: string, file: DIFile, line: number, size: number, align: number, derived: _Type, elements: Array<_Type>): DICompositeType;
+		createSubroutineType(paramTypes: Array<_Type>): DISubroutineType;
 		finalize(): void;
 		insertDeclare(value: Value, local: DILocalVariable, block: BasicBlock, line: Number, columnL: Number): Value;
 		insertDbgValueIntrinsic(value: Value, local: DILocalVariable, block: BasicBlock, line: Number, columnL: Number): Value;

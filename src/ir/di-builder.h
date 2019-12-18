@@ -13,6 +13,7 @@
 
 // Helper macro for seeing if it is a scope
 #define IS_SCOPE(X) (DILexicalBlockWrapper::isInstance(X) || DIScopeWrapper::isInstance(X) || DIFileWrapper::isInstance(X) || DISubprogramWrapper::isInstance(X) || DICompileUnitWrapper::isInstance(X))
+#define IS_TYPE(X) (DIBasicTypeWrapper::isInstance(X) || DICompositeTypeWrapper::isInstance(X) || DIDerivedTypeWrapper::isInstance(X) || DITypeWrapper::isInstance(X))
 
 // Method to initialize all of the DI components
 NAN_MODULE_INIT(InitDebug);
@@ -39,6 +40,7 @@ private:
 	static NAN_METHOD(CreateFunction);
 	static NAN_METHOD(CreateLexicalBlock);
 	static NAN_METHOD(CreatePointerType);
+	static NAN_METHOD(CreateStructType);
 	static NAN_METHOD(CreateSubroutineType);
 	static NAN_METHOD(Finalize);
 	static NAN_METHOD(InsertDeclare);
@@ -54,6 +56,8 @@ private:
 // Various subclasses
 using DIBasicTypeWrapper      = DIValueWrapper<llvm::DIBasicType>;
 using DICompileUnitWrapper    = DIValueWrapper<llvm::DICompileUnit>;
+using DICompositeTypeWrapper  = DIValueWrapper<llvm::DICompositeType>;
+using DIDerivedTypeWrapper    = DIValueWrapper<llvm::DIDerivedType>;
 using DIFileWrapper           = DIValueWrapper<llvm::DIFile>;
 using DILexicalBlockWrapper   = DIValueWrapper<llvm::DILexicalBlock>;
 using DILocalVariableWrapper  = DIValueWrapper<llvm::DILocalVariable>;

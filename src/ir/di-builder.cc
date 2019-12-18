@@ -6,6 +6,8 @@
 
 template<> std::string DIBasicTypeWrapper::name = "DIBasicType";
 template<> std::string DICompileUnitWrapper::name = "DICompileUnit";
+template<> std::string DICompositeTypeWrapper::name = "DICompositeType";
+template<> std::string DIDerivedTypeWrapper::name = "DIDerivedType";
 template<> std::string DIFileWrapper::name = "DIFile";
 template<> std::string DILexicalBlockWrapper::name = "DILexicalBlock";
 template<> std::string DILocalVariableWrapper::name = "DILocalVariable";
@@ -16,8 +18,10 @@ template<> std::string DITypeWrapper::name = "DIType";
 
 NAN_MODULE_INIT(InitDebug) {
 	DIBasicTypeWrapper::Init(target);
-	DICompileUnitWrapper::Init(target);
 	DIBuilderWrapper::Init(target);
+	DICompileUnitWrapper::Init(target);
+	DICompositeTypeWrapper::Init(target);
+	DIDerivedTypeWrapper::Init(target);
 	DIFileWrapper::Init(target);
 	DILexicalBlockWrapper::Init(target);
 	DILocalVariableWrapper::Init(target);
@@ -39,6 +43,7 @@ NAN_MODULE_INIT(DIBuilderWrapper::Init) {
 	Nan::SetPrototypeMethod(functionTemplate, "createFunction", DIBuilderWrapper::CreateFunction);
 	Nan::SetPrototypeMethod(functionTemplate, "createLexicalBlock", DIBuilderWrapper::CreateLexicalBlock);
 	Nan::SetPrototypeMethod(functionTemplate, "createPointerType", DIBuilderWrapper::CreatePointerType);
+	Nan::SetPrototypeMethod(functionTemplate, "createStructType", DIBuilderWrapper::CreateStructType);
 	Nan::SetPrototypeMethod(functionTemplate, "createSubroutineType", DIBuilderWrapper::CreateSubroutineType);
 	Nan::SetPrototypeMethod(functionTemplate, "finalize", DIBuilderWrapper::Finalize);
 	Nan::SetPrototypeMethod(functionTemplate, "insertDeclare", DIBuilderWrapper::InsertDeclare);
@@ -89,7 +94,7 @@ NAN_METHOD(DIBuilderWrapper::CreateAutoVariable) {
 		info[1]->IsString() &&
 		DIFileWrapper::isInstance(info[2]) &&
 		info[3]->IsUint32() &&
-		(DIBasicTypeWrapper::isInstance(info[4]) || DITypeWrapper::isInstance(info[4])) // FIXME: Cleaner than this
+		IS_TYPE(info[4])
 	)) {
 		return Nan::ThrowTypeError("createAutoVariable needs to be called with scope: DIScope, name: string, file: DIFile, lineNo: number, ty: DIType");
 	}
@@ -251,18 +256,7 @@ NAN_METHOD(DIBuilderWrapper::CreateLexicalBlock) {
 		return Nan::ThrowTypeError("CreateLexicalBlock needs to be called with scope: Scope, file: DIFile, line: number, and column: number");
 	}
 
-	llvm::DIScope* scope;
-	if (DILexicalBlockWrapper::isInstance(info[0]))
-		scope = DILexicalBlockWrapper::FromValue(info[0])->getDIValue();
-	else if (DIScopeWrapper::isInstance(info[0]))
-		scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
-	else if (DIFileWrapper::isInstance(info[0]))
-		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[0])->getDIValue();
-	else if (DISubprogramWrapper::isInstance(info[0]))
-		scope = (llvm::DIScope*) DISubprogramWrapper::FromValue(info[0])->getDIValue();
-	else
-		scope = (llvm::DIScope*) DICompileUnitWrapper::FromValue(info[0])->getDIValue();
-
+	auto* scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
 	auto* file = DIFileWrapper::FromValue(info[1])->getDIValue();
 	auto line = Nan::To<uint32_t>(info[2]).FromJust();
 	auto col = Nan::To<uint32_t>(info[3]).FromJust();
@@ -274,11 +268,11 @@ NAN_METHOD(DIBuilderWrapper::CreatePointerType) {
 	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
 
 	if (info.Length() != 3 || !(
-		DIBasicTypeWrapper::isInstance(info[0]) &&
+		IS_TYPE(info[0]) &&
 		info[1]->IsUint32() &&
 		info[2]->IsString()
 	)) {
-		return Nan::ThrowTypeError("createPointerType needs to be called with pointeeType: DIBasicType, sizeInBits: number, and name: string");
+		return Nan::ThrowTypeError("createPointerType needs to be called with pointeeType: DIType, sizeInBits: number, and name: string");
 	}
 
 	auto* ty = DIBasicTypeWrapper::FromValue(info[0])->getDIValue();
@@ -286,7 +280,48 @@ NAN_METHOD(DIBuilderWrapper::CreatePointerType) {
 	std::string name = ToString(info[2]);
 
 	auto* ptr = builder.createPointerType(ty, size, 0, llvm::None, name);
-	info.GetReturnValue().Set(DITypeWrapper::of(ptr));
+	info.GetReturnValue().Set(DIDerivedTypeWrapper::of(ptr));
+}
+
+NAN_METHOD(DIBuilderWrapper::CreateStructType) {
+	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
+
+	// Check if args are correct
+	if (info.Length() != 9 || !(
+		IS_SCOPE(info[0]) &&
+		info[1]->IsString() &&
+		DIFileWrapper::isInstance(info[2]) &&
+		info[3]->IsUint32() &&
+		info[4]->IsUint32() &&
+		info[5]->IsUint32() &&
+		IS_TYPE(info[6]) &&
+		info[7]->IsArray()
+	)) {
+		return Nan::ThrowTypeError("createStructType needs to be called with scope: DIScope, name: string, file: DIFile, line: number, size: number, align: number, derived: DIType, elements: Array<DIType>");
+	}
+
+	v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(info[7]);
+
+	// Check that all elements in the array are correct
+	std::vector<llvm::Metadata*> args(array->Length());
+	for (auto i = 0u; i != array->Length(); ++i) {
+		if (!(IS_TYPE(array->Get(i)))) {
+			return Nan::ThrowTypeError("CreateStructType requires all of the elements of paramTypes to be of type DIType");
+		}
+
+		args[i] = DITypeWrapper::FromValue(array->Get(i))->getDIValue();
+	}
+
+	auto* scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
+	std::string name = ToString(info[1]);
+	auto* file = DIFileWrapper::FromValue(info[2])->getDIValue();
+	auto line = Nan::To<uint32_t>(info[3]).FromJust();
+	auto size = Nan::To<uint32_t>(info[4]).FromJust();
+	auto align = Nan::To<uint32_t>(info[5]).FromJust();
+	auto* derived = DITypeWrapper::FromValue(info[6])->getDIValue();
+
+	auto structy = builder.createStructType(scope, name, file, line, size, align, llvm::DINode::DIFlags::FlagPublic, derived, builder.getOrCreateArray(args));
+	info.GetReturnValue().Set(DICompositeTypeWrapper::of(structy));
 }
 
 NAN_METHOD(DIBuilderWrapper::CreateSubroutineType) {
@@ -304,11 +339,11 @@ NAN_METHOD(DIBuilderWrapper::CreateSubroutineType) {
 	// Check that all elements in the array are correct
 	std::vector<llvm::Metadata*> args(array->Length());
 	for (auto i = 0u; i != array->Length(); ++i) {
-		if (!(DIBasicTypeWrapper::isInstance(array->Get(i)))) {
-			return Nan::ThrowTypeError("CreateSubroutineType requires all of the elements of paramTypes to be of type DIBasicType");
+		if (!(IS_TYPE(array->Get(i)))) {
+			return Nan::ThrowTypeError("CreateSubroutineType requires all of the elements of paramTypes to be of type DIType");
 		}
 
-		args[i] = DIBasicTypeWrapper::FromValue(array->Get(i))->getDIValue();
+		args[i] = DITypeWrapper::FromValue(array->Get(i))->getDIValue();
 	}
 
 	auto subty = builder.createSubroutineType(builder.getOrCreateTypeArray(args));

@@ -51,6 +51,7 @@ Nan::Persistent<v8::FunctionTemplate> &FunctionWrapper::functionTemplate() {
         Nan::SetPrototypeMethod(localTemplate, "addDereferenceableAttr", FunctionWrapper::addDereferenceableAttr);
         Nan::SetPrototypeMethod(localTemplate, "addDereferenceableOrNullAttr", FunctionWrapper::addDereferenceableOrNullAttr);
         Nan::SetPrototypeMethod(localTemplate, "addFnAttr", FunctionWrapper::addFnAttr);
+        Nan::SetPrototypeMethod(localTemplate, "deleteBody", FunctionWrapper::deleteBody);
         Nan::SetPrototypeMethod(localTemplate, "getArguments", FunctionWrapper::getArguments);
         Nan::SetPrototypeMethod(localTemplate, "getEntryBlock", FunctionWrapper::getEntryBlock);
         Nan::SetPrototypeMethod(localTemplate, "getBasicBlocks", FunctionWrapper::getBasicBlocks);
@@ -160,6 +161,11 @@ NAN_METHOD(FunctionWrapper::addDereferenceableOrNullAttr) {
     auto bytes = Nan::To<uint32_t>(info[1]).FromJust();
 
     function->addDereferenceableOrNullAttr(index, bytes);
+}
+
+NAN_METHOD(FunctionWrapper::deleteBody) {
+	auto* function = FunctionWrapper::FromValue(info.Holder())->getFunction();
+	function->deleteBody();
 }
 
 NAN_METHOD(FunctionWrapper::getArguments) {
