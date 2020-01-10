@@ -591,6 +591,7 @@ declare namespace llvm {
 		createFile(filename: string, directory: string): DIFile;
 		createFunction(scope: _Scope, name: string, linkageName: string, file: DIFile, lineNo: number, ty: DISubroutineType, scopeLine: number): DISubprogram;
 		createLexicalBlock(scope: _Scope, file: DIFile, line: number, col: number): DILexicalBlock;
+		createParameterVariable(scope: _Scope, name: string, file: DIFile, argPos: number, line: number, type: _Type): DILocalVariable;
 		createPointerType(pointee: _Type, sizeInBits: number, name: string): DIDerivedType;
 		createStructType(scope: _Scope, name: string, file: DIFile, line: number, size: number, align: number, derived: _Type, elements: Array<_Type>): DICompositeType;
 		createSubroutineType(paramTypes: Array<_Type>): DISubroutineType;

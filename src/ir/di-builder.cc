@@ -42,6 +42,7 @@ NAN_MODULE_INIT(DIBuilderWrapper::Init) {
 	Nan::SetPrototypeMethod(functionTemplate, "createFile", DIBuilderWrapper::CreateFile);
 	Nan::SetPrototypeMethod(functionTemplate, "createFunction", DIBuilderWrapper::CreateFunction);
 	Nan::SetPrototypeMethod(functionTemplate, "createLexicalBlock", DIBuilderWrapper::CreateLexicalBlock);
+	Nan::SetPrototypeMethod(functionTemplate, "createParameterVariable", DIBuilderWrapper::CreateParameterVariable);
 	Nan::SetPrototypeMethod(functionTemplate, "createPointerType", DIBuilderWrapper::CreatePointerType);
 	Nan::SetPrototypeMethod(functionTemplate, "createStructType", DIBuilderWrapper::CreateStructType);
 	Nan::SetPrototypeMethod(functionTemplate, "createSubroutineType", DIBuilderWrapper::CreateSubroutineType);
@@ -99,18 +100,7 @@ NAN_METHOD(DIBuilderWrapper::CreateAutoVariable) {
 		return Nan::ThrowTypeError("createAutoVariable needs to be called with scope: DIScope, name: string, file: DIFile, lineNo: number, ty: DIType");
 	}
 
-	llvm::DIScope* scope;
-	if (DILexicalBlockWrapper::isInstance(info[0]))
-		scope = DILexicalBlockWrapper::FromValue(info[0])->getDIValue();
-	else if (DIScopeWrapper::isInstance(info[0]))
-		scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
-	else if (DIFileWrapper::isInstance(info[0]))
-		scope = (llvm::DIScope*) DIFileWrapper::FromValue(info[0])->getDIValue();
-	else if (DISubprogramWrapper::isInstance(info[0]))
-		scope = (llvm::DIScope*) DISubprogramWrapper::FromValue(info[0])->getDIValue();
-	else
-		scope = (llvm::DIScope*) DICompileUnitWrapper::FromValue(info[0])->getDIValue();
-
+	llvm::DIScope* scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
 	auto  name  = ToString(info[1]);
 	auto* file  = DIFileWrapper::FromValue(info[2])->getDIValue();
 	auto  line  = Nan::To<uint32_t>(info[3]).FromJust();
@@ -262,6 +252,31 @@ NAN_METHOD(DIBuilderWrapper::CreateLexicalBlock) {
 	auto col = Nan::To<uint32_t>(info[3]).FromJust();
 
 	info.GetReturnValue().Set(DILexicalBlockWrapper::of(builder.createLexicalBlock(scope, file, line, col)));
+}
+
+NAN_METHOD(DIBuilderWrapper::CreateParameterVariable) {
+	auto& builder = DIBuilderWrapper::FromValue(info.Holder())->diBuilder;
+
+	if (info.Length() != 6 || !(
+		IS_SCOPE(info[0]) &&
+		info[1]->IsString() &&
+		info[2]->IsUint32() &&
+		DIFileWrapper::isInstance(info[3]) &&
+		info[4]->IsUint32() &&
+		IS_TYPE(info[5])
+	)) {
+		return Nan::ThrowTypeError("createParameterVariable needs to be called with scope: DIScope, name: string, argPos: number, file: DIFile, lineNo: number, ty: DIType");
+	}
+
+	llvm::DIScope* scope = DIScopeWrapper::FromValue(info[0])->getDIValue();
+	auto  name   = ToString(info[1]);
+	auto  argPos = Nan::To<uint32_t>(info[2]).FromJust();
+	auto* file   = DIFileWrapper::FromValue(info[3])->getDIValue();
+	auto  line   = Nan::To<uint32_t>(info[4]).FromJust();
+	auto* ty     = DITypeWrapper::FromValue(info[5])->getDIValue();
+
+	auto var = builder.createParameterVariable(scope, name, argPos, file, line, ty, false);
+	info.GetReturnValue().Set(DILocalVariableWrapper::of(var));
 }
 
 NAN_METHOD(DIBuilderWrapper::CreatePointerType) {
