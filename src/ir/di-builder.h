@@ -39,6 +39,7 @@ private:
 	static NAN_METHOD(CreateFile);
 	static NAN_METHOD(CreateFunction);
 	static NAN_METHOD(CreateLexicalBlock);
+	static NAN_METHOD(CreateParameterVariable);
 	static NAN_METHOD(CreatePointerType);
 	static NAN_METHOD(CreateStructType);
 	static NAN_METHOD(CreateSubroutineType);
