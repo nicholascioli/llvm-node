@@ -738,6 +738,8 @@ declare namespace llvm {
 
 		CreateURem(lhs: Value, rhs: Value, name?: string): Value;
 
+		createVAArg(list: Value, type: Type, name?: string): Value;
+
 		createZExt(value: Value, destType: Type, name?: string): Value;
 
 		getInsertBlock(): BasicBlock | undefined;

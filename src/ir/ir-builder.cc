@@ -135,6 +135,7 @@ NAN_MODULE_INIT(IRBuilderWrapper::Init) {
     Nan::SetPrototypeMethod(functionTemplate, "createSIToFP", &IRBuilderWrapper::ConvertOperation<&llvm::IRBuilder<>::CreateSIToFP>);
     Nan::SetPrototypeMethod(functionTemplate, "createUIToFP", &IRBuilderWrapper::ConvertOperation<&llvm::IRBuilder<>::CreateUIToFP>);
     Nan::SetPrototypeMethod(functionTemplate, "createStore", IRBuilderWrapper::CreateStore);
+    Nan::SetPrototypeMethod(functionTemplate, "createVAArg", IRBuilderWrapper::CreateVAArg);
     Nan::SetPrototypeMethod(functionTemplate, "createZExt", IRBuilderWrapper::ConvertOperation<&llvm::IRBuilder<>::CreateZExt>);
     Nan::SetPrototypeMethod(functionTemplate, "getInsertBlock", IRBuilderWrapper::GetInsertBlock);
     Nan::SetPrototypeMethod(functionTemplate, "setCurrentDebugLocation", IRBuilderWrapper::SetCurrentDebugLocation);
@@ -636,6 +637,25 @@ NAN_METHOD(IRBuilderWrapper::CreateSelect) {
     }
 
     info.GetReturnValue().Set(ValueWrapper::of(builder.CreateSelect(condition, trueValue, falseValue, name)));
+}
+
+NAN_METHOD(IRBuilderWrapper::CreateVAArg) {
+    auto& builder = IRBuilderWrapper::FromValue(info.Holder())->irBuilder;
+    if (info.Length() < 2 || !ValueWrapper::isInstance(info[0]) || !TypeWrapper::isInstance(info[1]) ||
+			(info.Length() > 2 && !info[2]->IsString()) ||
+            info.Length() > 4) {
+        return Nan::ThrowTypeError("createVAArg needs to be called with: va_list: Value, type: Type, name?: string");
+    }
+
+    auto* list = ValueWrapper::FromValue(info[0])->getValue();
+	auto* type = TypeWrapper::FromValue(info[1])->getType();
+	std::string name {};
+
+    if (info.Length() == 3 && !info[2]->IsUndefined()) {
+        name = ToString(info[2]);
+    }
+
+	info.GetReturnValue().Set(ValueWrapper::of(builder.CreateVAArg(list, type, name)));
 }
 
 NAN_METHOD(IRBuilderWrapper::GetInsertBlock) {
