@@ -8,6 +8,8 @@
 
 #include "../util/string.h"
 
+#include <iostream>
+
 
 NAN_MODULE_INIT(ConstantExprWrapper::Init) {
         auto constantExpr = Nan::GetFunction(Nan::New(constantExprTemplate())).ToLocalChecked();
@@ -43,6 +45,31 @@ NAN_METHOD(ConstantExprWrapper::getBitCast) {
 	return info.GetReturnValue().Set(ConstantWrapper::of(as));
 }
 
+NAN_METHOD(ConstantExprWrapper::getInBoundsGetElementPtr) {
+    if (info.Length() != 3 || !TypeWrapper::isInstance(info[0]) || !ConstantWrapper::isInstance(info[1]) || !info[2]->IsArray()) {
+		return Nan::ThrowTypeError("getInBoundsGetElementPtr called with illegal arguments");
+    }
+
+	auto type = TypeWrapper::FromValue(info[0])->getType();
+	auto cons = ConstantWrapper::FromValue(info[1])->getConstant();
+
+	v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(info[2]);
+
+	// Check that all elements in the array are correct
+	std::vector<llvm::Constant*> args(array->Length());
+	for (auto i = 0u; i != array->Length(); ++i) {
+		if (!ConstantWrapper::isInstance(array->Get(i))) {
+			return Nan::ThrowTypeError("getInBoundsGetElementPtr requires all of the elements of paramTypes to be constants");
+		}
+
+		args[i] = ConstantWrapper::FromValue(array->Get(i))->getConstant();
+	}
+
+	auto as = llvm::ConstantExpr::getInBoundsGetElementPtr(type, cons, llvm::ArrayRef<llvm::Constant*>(args));
+
+	return info.GetReturnValue().Set(ConstantWrapper::of(as));
+}
+
 llvm::ConstantExpr *ConstantExprWrapper::getConstantExpr() {
     return static_cast<llvm::ConstantExpr*>(getValue());
 }
@@ -66,6 +93,7 @@ Nan::Persistent<v8::FunctionTemplate>& ConstantExprWrapper::constantExprTemplate
         localTemplate->Inherit(Nan::New(constantTemplate()));
 
         Nan::SetMethod(localTemplate, "getBitCast", ConstantExprWrapper::getBitCast);
+        Nan::SetMethod(localTemplate, "getInBoundsGetElementPtr", ConstantExprWrapper::getInBoundsGetElementPtr);
 
         functionTemplate.Reset(localTemplate);
     }

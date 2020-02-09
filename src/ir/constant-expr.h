@@ -23,6 +23,7 @@ private:
     // static
     static NAN_METHOD(New);
     static NAN_METHOD(getBitCast);
+    static NAN_METHOD(getInBoundsGetElementPtr);
 };
 
 #endif //LLVM_NODE_CONSTANT_FP_WRAPPER_H

@@ -188,6 +188,7 @@ declare namespace llvm {
 
 	class ConstantExpr extends Constant {
 		static getBitCast(cons: Constant, type: Type): Constant;
+		static getInBoundsGetElementPtr(type: Type | null, cons: Constant, idx: Array<Constant>): Constant;
 	}
 
 	class ConstantFP extends Constant {
