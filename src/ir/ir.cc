@@ -27,6 +27,7 @@
 #include "call-inst.h"
 #include "struct-type.h"
 #include "constant-data-array.h"
+#include "constant-expr.h"
 #include "constant-fp.h"
 #include "constant-int.h"
 #include "constant-pointer-null.h"
@@ -52,6 +53,7 @@ NAN_MODULE_INIT(InitIR) {
     ConstantWrapper::Init(target);
     ConstantArrayWrapper::Init(target);
     ConstantDataArrayWrapper::Init(target);
+	ConstantExprWrapper::Init(target);
     ConstantFPWrapper::Init(target);
     ConstantIntWrapper::Init(target);
     ConstantPointerNullWrapper::Init(target);

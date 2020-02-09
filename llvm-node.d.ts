@@ -186,6 +186,10 @@ declare namespace llvm {
 		isAllOnesValue(): boolean;
 	}
 
+	class ConstantExpr extends Constant {
+		static getBitCast(cons: Constant, type: Type): Constant;
+	}
+
 	class ConstantFP extends Constant {
 		static get(context: LLVMContext, value: number): ConstantFP;
 		static get(type: Type, value: string): Constant;
